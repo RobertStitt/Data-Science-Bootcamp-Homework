@@ -1,0 +1,105 @@
+#1
+select actor_id, director_id 
+from ActorDirector
+group by actor_id, director_id
+having count(*) >= 3;
+
+
+import pandas as pd
+
+def actors_and_directors(actor_director: pd.DataFrame) -> pd.DataFrame:
+    result = (actor_director
+              .groupby(['actor_id', 'director_id'])
+              .size()
+              .reset_index(name='count')
+              .query('count >= 3')
+              [['actor_id', 'director_id']])
+    
+    return result
+
+
+
+#2
+select user_id, 
+    concat(
+        upper(substring(name, 1, 1)),
+        lower(substring(name, 2, length(name)))
+    ) AS name
+from Users  
+order by user_id asc;
+
+
+import pandas as pd
+
+def fix_names(users: pd.DataFrame) -> pd.DataFrame:
+    users['name'] = users['name'].str.capitalize()
+    result = users.sort_values('user_id')
+    
+    return result
+
+
+
+#3
+select p.firstName, p.lastName, a.city, a.state
+from Person as p
+left join Address as a on
+p.personId = a.personId
+
+
+import pandas as pd
+
+def combine_two_tables(person: pd.DataFrame, address: pd.DataFrame) -> pd.DataFrame:
+    result = person.merge(address, on='personId', how='left')
+    result = result[['firstName', 'lastName', 'city', 'state']]
+    
+    return result
+
+
+
+#4
+
+select max(salary) AS secondHighest
+from Employee
+where salary < (select max(salary) from Employee);
+
+import pandas as pd
+
+def second_highest_salary(employee: pd.DataFrame) -> pd.DataFrame:
+    unique = employee['salary'].drop_duplicates()
+    
+    if len(unique) < 2:
+        return pd.DataFrame({'secondHighest': [None]})
+    
+    second_highest = unique.nlargest(2).iloc[-1]
+    
+    return pd.DataFrame({'secondHighest': [second_highest]})
+
+#5
+
+select p.product_name, sum(o.unit) as unit
+from Products p
+join Orders o on p.product_id = o.product_id
+where o.order_date >= '2020-02-01' 
+and o.order_date < '2020-03-01'
+group by p.product_id, p.product_name
+having sum(o.unit) >= 100;
+
+#8
+
+import pandas as pd
+
+select p.project_id, round(avg(e.experience_years), 2) as average_years
+from Project p
+join Employee e on p.employee_id = e.employee_id
+group by p.project_id;
+
+def project_employees_i(project: pd.DataFrame, employee: pd.DataFrame) -> pd.DataFrame:
+    merged = project.merge(employee, on='employee_id')
+    result = (project.merge(employee, on='employee_id')
+              .groupby('project_id')
+              .agg(average_years=('experience_years', 'mean'))
+              .round(2)
+              .reset_index())
+    
+    return result
+
